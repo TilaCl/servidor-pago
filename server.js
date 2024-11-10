@@ -1,26 +1,22 @@
-// server.js
 const express = require('express');
 const { WebpayPlus, Options, IntegrationCommerceCodes, IntegrationApiKeys, Environment } = require('transbank-sdk');
 
 const app = express();
-const PORT = 3000;
+app.use(express.json());
 
-app.use(express.json()); // Middleware para parsear JSON
-
-// Configuración de Transbank para Webpay Plus
+// Configuración de Transbank para Webpay Plus en ambiente de integración
 const webpay = new WebpayPlus.Transaction(new Options(
-  IntegrationCommerceCodes.WEBPAY_PLUS,       // Código de comercio de integración
-  IntegrationApiKeys.WEBPAY,                   // API Key de integración
-  Environment.Integration                      // Cambiar a Environment.Production en producción
+  IntegrationCommerceCodes.WEBPAY_PLUS,
+  IntegrationApiKeys.WEBPAY,
+  Environment.Integration
 ));
 
 // Endpoint para crear una transacción
 app.post('/api/payment/create', async (req, res) => {
   try {
     const { buyOrder, sessionId, amount } = req.body;
-    const returnUrl = "https://servidor-pago-gchg.vercel.app"; // Cambia con la URL de retorno para confirmar el pago
+    const returnUrl = "https://servidor-pago-gchg.vercel.app/api/payment/commit"; // Cambia esta URL a la de tu proyecto en Vercel
 
-    // Crear transacción en Transbank
     const response = await webpay.create(buyOrder, sessionId, amount, returnUrl);
     res.status(200).json({ token: response.token, url: response.url });
   } catch (error) {
@@ -32,12 +28,10 @@ app.post('/api/payment/create', async (req, res) => {
 // Endpoint para confirmar la transacción
 app.post('/api/payment/commit', async (req, res) => {
   try {
-    const token = req.body.token_ws; // Recibe el token de la solicitud
+    const token = req.body.token_ws;
 
-    // Confirmar transacción en Transbank
     const response = await webpay.commit(token);
-
-    if (response.response_code === 0) { // Código 0 indica éxito
+    if (response.response_code === 0) {
       res.json({ success: true, message: 'Pago completado con éxito', details: response });
     } else {
       res.json({ success: false, message: 'Pago rechazado', details: response });
@@ -48,7 +42,5 @@ app.post('/api/payment/commit', async (req, res) => {
   }
 });
 
-// Inicia el servidor en el puerto especificado
-app.listen(PORT, () => {
-  console.log(`Servidor de Transbank escuchando en http://localhost:${PORT}`);
-});
+// Exporta `app` para que Vercel lo utilice sin necesidad de `app.listen`
+module.exports = app;
