@@ -5,10 +5,7 @@
     "scripts": {
       "start": "node server.js"
     },
-    "dependencies": {
-      "express": "^4.17.1",
-      "transbank-sdk": "^1.2.1"
-    },
+
     "keywords": [],
     "author": "",
     "license": "ISC",
