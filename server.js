@@ -1,46 +1,34 @@
-const express = require('express');
-const { WebpayPlus, Options, IntegrationCommerceCodes, IntegrationApiKeys, Environment } = require('transbank-sdk');
-
+const express = require("express");
+const axios = require("axios");
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(express.json());
 
-// Configuración de Transbank para Webpay Plus en ambiente de integración
-const webpay = new WebpayPlus.Transaction(new Options(
-  IntegrationCommerceCodes.WEBPAY_PLUS,
-  IntegrationApiKeys.WEBPAY,
-  Environment.Integration
-));
-
-// Endpoint para crear una transacción
-app.post('/api/payment/create', async (req, res) => {
+// Endpoint para iniciar transacción
+app.post("/api/payment/create", async (req, res) => {
+  const { buyOrder, sessionId, amount } = req.body;
   try {
-    const { buyOrder, sessionId, amount } = req.body;
-    const returnUrl = "https://servidor-pago-gchg.vercel.app/api/payment/commit"; // Cambia esta URL a la de tu proyecto en Vercel
-
-    const response = await webpay.create(buyOrder, sessionId, amount, returnUrl);
-    res.status(200).json({ token: response.token, url: response.url });
+    const response = await axios.post(
+      "https://webpay3gint.transbank.cl/rswebpaytransaction/api/webpay/v1.2/transactions",
+      {
+        buy_order: buyOrder,
+        session_id: sessionId,
+        amount: amount,
+        return_url: "https://google.com"
+      },
+      {
+        headers: {
+          "Tbk-Api-Key-Id": "597055555532",
+          "Tbk-Api-Key-Secret": "579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C",
+          "Content-Type": "application/json"
+        }
+      }
+    );
+    res.json(response.data);
   } catch (error) {
-    console.error("Error al crear la transacción:", error);
-    res.status(500).json({ error: "Error al crear la transacción" });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Endpoint para confirmar la transacción
-app.post('/api/payment/commit', async (req, res) => {
-  try {
-    const token = req.body.token_ws;
-
-    const response = await webpay.commit(token);
-    if (response.response_code === 0) {
-      res.json({ success: true, message: 'Pago completado con éxito', details: response });
-    } else {
-      res.json({ success: false, message: 'Pago rechazado', details: response });
-    }
-  } catch (error) {
-    console.error("Error al confirmar la transacción:", error);
-    res.status(500).json({ error: "Error al confirmar la transacción" });
-  }
-});
-
-// Exporta `app` para que Vercel lo utilice sin necesidad de `app.listen`
-module.exports = app;
+app.listen(PORT, () => console.log(`Servidor escuchando en puerto ${PORT}`));
