@@ -18,7 +18,7 @@ const webpay = new WebpayPlus.Transaction(new Options(
 app.post('/api/payment/create', async (req, res) => {
   try {
     const { buyOrder, sessionId, amount } = req.body;
-    const returnUrl = "https://tu-app-url.com/api/payment/commit"; // Cambia con la URL de retorno para confirmar el pago
+    const returnUrl = "https://servidor-pago-gchg.vercel.app"; // Cambia con la URL de retorno para confirmar el pago
 
     // Crear transacción en Transbank
     const response = await webpay.create(buyOrder, sessionId, amount, returnUrl);
